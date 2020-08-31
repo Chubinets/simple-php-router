@@ -32,21 +32,16 @@ abstract class LoadableRoute extends Route implements ILoadableRoute
     {
         $router->debug('Loading middlewares');
 
-        foreach ($this->getMiddlewares() as $middleware) {
+        foreach ($this->getMiddlewares() as $middleware) 
+        {
+            $middleware = explode(':', $middleware);
+            $class = $router->getClassLoader()->loadClass(array_shift($middleware));
 
-            if (\is_object($middleware) === false) {
-                $middleware = $router->getClassLoader()->loadClass($middleware);
-            }
+            $router->debug('Loading middleware "%s"', $class);
 
-            if (($middleware instanceof IMiddleware) === false) {
-                throw new HttpException($middleware . ' must be inherit the IMiddleware interface');
-            }
+            call_user_func_array([$class, 'handle'], $middleware);
 
-            $className = \get_class($middleware);
-
-            $router->debug('Loading middleware "%s"', $className);
-            $middleware->handle($request);
-            $router->debug('Finished loading middleware "%s"', $className);
+            $router->debug('Finished loading middleware "%s"', $class);
         }
 
         $router->debug('Finished loading middlewares');
